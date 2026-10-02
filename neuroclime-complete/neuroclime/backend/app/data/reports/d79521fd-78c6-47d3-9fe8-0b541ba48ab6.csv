@@ -1,0 +1,7 @@
+ward_id,ward_name,population,hex_count,avg_heat_index_6h_c,peak_risk_band_6h,peak_hex_id,recommended_action
+bf0bb27e-2b7b-5609-ae37-2405ad31b786,Ward 1,135989,130,32.28,caution,88608850d1fffff,Issue public advisory; monitor for escalation over the forecast window.
+2d36e10c-55c6-5d15-9e27-f129bcc5b73d,Ward 2,70222,116,33.27,caution,8860885231fffff,Issue public advisory; monitor for escalation over the forecast window.
+ec1050dc-02a2-5668-bfb8-f2742360df86,Ward 3,49824,128,32.05,caution,8860885339fffff,Issue public advisory; monitor for escalation over the forecast window.
+a5b9dfb2-fd07-546f-bae5-23ee5b976d0d,Ward 4,97380,121,32.08,caution,8860884201fffff,Issue public advisory; monitor for escalation over the forecast window.
+49d86c8d-6ab9-5cc3-8d57-39c125cbc0fd,Ward 5,96878,123,32.98,caution,88608851a1fffff,Issue public advisory; monitor for escalation over the forecast window.
+d6f60ad6-8dd9-5171-b4e8-1954773b57cf,Ward 6,198289,121,31.94,caution,8860885331fffff,Issue public advisory; monitor for escalation over the forecast window.

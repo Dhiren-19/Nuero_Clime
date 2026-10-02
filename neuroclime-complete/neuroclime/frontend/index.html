@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NeuroClime — Know your street's heat</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌡️</text></svg>" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">◈</span>
+      <div class="brand-text">
+        <span class="brand-name">NeuroClime</span>
+        <span class="brand-tagline" data-i18n="tagline">Know your street's heat, not just your city's.</span>
+      </div>
+    </div>
+
+    <nav class="view-switch" role="tablist">
+      <button class="view-btn active" data-view="citizen" data-i18n="nav_citizen">Citizen</button>
+      <button class="view-btn" data-view="authority" data-i18n="nav_authority">Authority</button>
+      <button class="view-btn" data-view="admin" data-i18n="nav_admin">Admin</button>
+    </nav>
+
+    <div class="topbar-right">
+      <div class="lang-switch">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="hi">हिं</button>
+        <button class="lang-btn" data-lang="mr">मरा</button>
+      </div>
+      <div id="connection-badge" class="badge badge-live" title="Backend connectivity">
+        <span class="dot"></span><span id="connection-label" data-i18n="live">Live</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== CITIZEN VIEW ===== -->
+  <main id="view-citizen" class="view active">
+    <section class="map-pane">
+      <div id="map"></div>
+
+      <div class="map-overlay top-left">
+        <div id="offline-banner" class="offline-banner hidden">
+          <span data-i18n="offline_prefix">Offline — showing cached data from</span>
+          <strong id="offline-minutes">—</strong>
+          <span data-i18n="offline_suffix">minutes ago</span>
+        </div>
+      </div>
+
+      <div class="map-overlay bottom-center card time-slider-card">
+        <div class="time-slider-header">
+          <span data-i18n="forecast_label">Forecast horizon</span>
+          <strong id="horizon-readout">Now</strong>
+        </div>
+        <input type="range" id="horizon-slider" min="0" max="3" value="0" step="1" list="horizon-marks" />
+        <datalist id="horizon-marks">
+          <option value="0"></option><option value="1"></option><option value="2"></option><option value="3"></option>
+        </datalist>
+        <div class="time-slider-labels">
+          <span data-i18n="h0">Now</span><span data-i18n="h1">+1h</span><span data-i18n="h3">+3h</span><span data-i18n="h6">+6h</span>
+        </div>
+      </div>
+
+      <div class="map-legend card">
+        <div class="legend-title" data-i18n="legend_title">Heat risk</div>
+        <div class="legend-row"><span class="swatch" style="background:#0072B2"></span>🟦 <span data-i18n="band_safe">Safe</span></div>
+        <div class="legend-row"><span class="swatch" style="background:#E69F00"></span>🟧 <span data-i18n="band_caution">Caution</span></div>
+        <div class="legend-row"><span class="swatch" style="background:#D55E00"></span>🟥 <span data-i18n="band_danger">Danger</span></div>
+        <div class="legend-row"><span class="swatch" style="background:#7A0000"></span>⬛ <span data-i18n="band_extreme">Extreme</span></div>
+      </div>
+    </section>
+
+    <aside class="side-pane">
+      <div class="card" id="zone-panel">
+        <h3 data-i18n="zone_panel_title">Tap a zone on the map</h3>
+        <p class="muted" data-i18n="zone_panel_hint">See temperature, humidity, heat index and how confident the forecast is.</p>
+      </div>
+
+      <div class="card" id="alerts-panel">
+        <h3 data-i18n="alerts_title">Zone alerts</h3>
+        <p class="muted" data-i18n="alerts_hint">Get notified when your home or work zone crosses into Danger or Extreme.</p>
+        <div class="field-row">
+          <label data-i18n="home_zone">Home zone</label>
+          <button id="set-home-btn" class="btn-secondary" data-i18n="pick_on_map">Pick on map</button>
+          <span id="home-hex-label" class="mono muted">—</span>
+        </div>
+        <div class="field-row">
+          <label data-i18n="work_zone">Work zone</label>
+          <button id="set-work-btn" class="btn-secondary" data-i18n="pick_on_map">Pick on map</button>
+          <span id="work-hex-label" class="mono muted">—</span>
+        </div>
+        <button id="subscribe-btn" class="btn-primary" data-i18n="save_alerts">Save alert preferences</button>
+        <div id="alerts-list"></div>
+      </div>
+
+      <div class="card" id="route-panel">
+        <h3 data-i18n="route_title">Coolest route</h3>
+        <p class="muted" data-i18n="route_hint">Pick two points on the map — start, then end — to find the path with the least cumulative heat.</p>
+        <button id="pick-route-btn" class="btn-secondary" data-i18n="pick_route">Pick start &amp; end</button>
+        <div id="route-result"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ===== AUTHORITY VIEW ===== -->
+  <main id="view-authority" class="view">
+    <section class="authority-grid">
+      <div class="card">
+        <h2 data-i18n="ward_ranking_title">Ward risk ranking — next 6 hours</h2>
+        <p class="muted" data-i18n="ward_ranking_hint">Sorted by population-weighted heat exposure. Prioritize the top of this list for water points and shaded shelters.</p>
+        <table id="ward-table">
+          <thead><tr>
+            <th data-i18n="col_rank">#</th><th data-i18n="col_ward">Ward</th>
+            <th data-i18n="col_pop">Population</th><th data-i18n="col_heat">Avg heat index</th>
+            <th data-i18n="col_exposure">Exposure score</th>
+          </tr></thead>
+          <tbody id="ward-table-body"></tbody>
+        </table>
+        <button id="export-report-btn" class="btn-primary" data-i18n="export_csv">Export CSV report</button>
+        <div id="report-result"></div>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="scenario_title">What-if scenario tool</h2>
+        <p class="muted" data-i18n="scenario_hint">Pick a zone on the map, then adjust green cover and building density to see the predicted temperature change.</p>
+        <div id="scenario-hex-label" class="mono muted" data-i18n="scenario_pick_hex">No zone selected — click a hex on the map below.</div>
+
+        <div class="slider-field">
+          <label data-i18n="ndvi_label">Vegetation cover (NDVI)</label>
+          <input type="range" id="ndvi-slider" min="0" max="1" step="0.05" value="0.4" />
+          <span id="ndvi-readout" class="mono">0.40</span>
+        </div>
+        <div class="slider-field">
+          <label data-i18n="building_label">Building density</label>
+          <input type="range" id="building-slider" min="0" max="1" step="0.05" value="0.4" />
+          <span id="building-readout" class="mono">0.40</span>
+        </div>
+        <button id="run-scenario-btn" class="btn-primary" data-i18n="run_scenario">Run scenario</button>
+        <div id="scenario-result"></div>
+
+        <div id="authority-map" class="authority-map"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== ADMIN VIEW ===== -->
+  <main id="view-admin" class="view">
+    <section class="card">
+      <h2 data-i18n="pipeline_title">Data pipeline health</h2>
+      <p class="muted" data-i18n="pipeline_hint">Ingestion and inference job status. A stale or failed source doesn't block the map — it's flagged here instead.</p>
+      <button id="trigger-inference-btn" class="btn-secondary" data-i18n="trigger_inference">Trigger inference run</button>
+      <table id="pipeline-table">
+        <thead><tr>
+          <th data-i18n="col_job">Job</th><th data-i18n="col_source">Source</th>
+          <th data-i18n="col_status">Status</th><th data-i18n="col_started">Started</th>
+          <th data-i18n="col_metrics">Metrics</th>
+        </tr></thead>
+        <tbody id="pipeline-table-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="i18n.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

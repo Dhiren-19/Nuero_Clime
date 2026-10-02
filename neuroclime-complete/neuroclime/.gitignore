@@ -1,0 +1,13 @@
+.env
+backend/.env
+*.pyc
+__pycache__/
+.venv/
+venv/
+node_modules/
+pipeline/artifacts/*.joblib
+pipeline/artifacts/*.onnx
+backend/app/data/*.json
+!backend/app/data/.gitkeep
+*.log
+.DS_Store
